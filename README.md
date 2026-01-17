@@ -17,6 +17,24 @@
 </p>
 
 ---
+
+在这个分支内:
+- 你可以通过传递参数来指定'HeartMuLa'和'HeartCodec'加载在不同的驱动上。
+
+Within this branch:
+- You can specify that' HeartMuLa' and' HeartCodec' are loaded on different device by passing parameters.
+
+To generate music, run:
+
+```
+python ./examples/run_music_generation.py --model_path=./ckpt --version="3B" --codec_device="cuda:0" --mula_device="cuda:1"
+```
+
+这只是简单的修改，请期待未来的官方版本，当前效果在V100 16G * 2上运行良好。
+
+This is just a simple modification. Please look forward to the heartlib official version in the future. The current effect runs well on V100 16G * 2.
+
+---
 # HeartMuLa: A Family of Open Sourced Music Foundation Models
 
 HeartMuLa is a family of open sourced music foundation models including: 
