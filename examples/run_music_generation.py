@@ -15,14 +15,19 @@ def parse_args():
     parser.add_argument("--topk", type=int, default=50)
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--cfg_scale", type=float, default=1.5)
+    
+    parser.add_argument("--codec_device", type=str, default="cuda")
+    parser.add_argument("--mula_device", type=str, default="cuda")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
+
     pipe = HeartMuLaGenPipeline.from_pretrained(
         args.model_path,
-        device=torch.device("cuda"),
+        codec_device=torch.device(args.codec_device),
+        mula_device=torch.device(args.mula_device),
         dtype=torch.bfloat16,
         version=args.version,
     )

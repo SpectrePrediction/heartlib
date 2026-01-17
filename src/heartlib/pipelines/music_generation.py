@@ -34,7 +34,8 @@ class HeartMuLaGenPipeline(Pipeline):
         muq_mulan: Optional[Any],
         text_tokenizer: Tokenizer,
         config: HeartMuLaGenConfig,
-        device: torch.device,
+        codec_device: torch.device,
+        mula_device: torch.device,
         dtype: torch.dtype,
     ):
         super().__init__(model, dtype=dtype)
@@ -43,6 +44,8 @@ class HeartMuLaGenPipeline(Pipeline):
         self.muq_mulan = muq_mulan
         self.text_tokenizer = text_tokenizer
         self.config = config
+        self.codec_device = codec_device
+        self.mula_device = mula_device
 
         self._parallel_number = audio_codec.config.num_quantizers + 1
         self._muq_dim = model.config.muq_dim
@@ -198,7 +201,7 @@ class HeartMuLaGenPipeline(Pipeline):
                 break
             frames.append(curr_token[0:1,])
         frames = torch.stack(frames).permute(1, 2, 0).squeeze(0)
-        wav = self.audio_codec.detokenize(frames)
+        wav = self.audio_codec.detokenize(frames, device=self.codec_device)
         return {"wav": wav}
 
     def postprocess(self, model_outputs: Dict[str, Any], save_path: str):
@@ -209,7 +212,8 @@ class HeartMuLaGenPipeline(Pipeline):
     def from_pretrained(
         cls,
         pretrained_path: str,
-        device: torch.device,
+        codec_device: torch.device,
+        mula_device: torch.device,
         dtype: torch.dtype,
         version: str,
         bnb_config: Optional[BitsAndBytesConfig] = None,
@@ -218,7 +222,7 @@ class HeartMuLaGenPipeline(Pipeline):
         if os.path.exists(
             heartcodec_path := os.path.join(pretrained_path, "HeartCodec-oss")
         ):
-            heartcodec = HeartCodec.from_pretrained(heartcodec_path, device_map=device)
+            heartcodec = HeartCodec.from_pretrained(heartcodec_path, device_map=codec_device)
         else:
             raise FileNotFoundError(
                 f"Expected to find checkpoint for HeartCodec at {heartcodec_path} but not found. Please check your folder {pretrained_path}."
@@ -228,7 +232,7 @@ class HeartMuLaGenPipeline(Pipeline):
             heartmula_path := os.path.join(pretrained_path, f"HeartMuLa-oss-{version}")
         ):
             heartmula = HeartMuLa.from_pretrained(
-                heartmula_path, dtype=dtype, quantization_config=bnb_config, device_map=device
+                heartmula_path, dtype=dtype, quantization_config=bnb_config, device_map=mula_device
             )
         else:
             raise FileNotFoundError(
@@ -253,4 +257,4 @@ class HeartMuLaGenPipeline(Pipeline):
                 f"Expected to find gen_config.json for HeartMuLa at {gen_config_path} but not found. Please check your folder {pretrained_path}."
             )
 
-        return cls(heartmula, heartcodec, None, tokenizer, gen_config, device, dtype)
+        return cls(heartmula, heartcodec, None, tokenizer, gen_config, codec_device, mula_device, dtype)
